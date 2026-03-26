@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THENUX Auth Test - External Website</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 2rem auto;
+            padding: 1rem;
+            line-height: 1.5;
+            background: #f5f7fc;
+            color: #1a1a2e;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+        button {
+            background: #00e5ff;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .user-info {
+            background: #e8f5e9;
+            border-left: 4px solid #22d3a5;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .warning {
+            background: #fff3e0;
+            border-left: 4px solid #f59e0b;
+            padding: 0.8rem;
+            font-size: 0.9rem;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        hr {
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 THENUX Auth Test</h1>
+        <p>This is a sample external website using the THENUX authentication gateway.<br>
+        Click the button below to sign in with your THENUX account (Google or email).</p>
+
+        <div class="warning">
+            ⚠️ <strong>Important:</strong> Replace the API key in the script below with a real key from your 
+            <a href="https://thenux-auth.netlify.app/dashboard/" target="_blank">THENUX Dashboard</a>.
+            If you don't have one, create an API key first in your dashboard.
+        </div>
+
+        <button id="thenux-login" style="margin: 1rem 0 0 0;">🚀 Sign in with THENUX</button>
+
+        <div id="auth-result" style="display: none;" class="user-info">
+            <h3>✅ Authentication successful!</h3>
+            <p><strong>User:</strong> <span id="user-email"></span></p>
+            <p><strong>JWT Token (first 80 chars):</strong> <code id="token-preview"></code></p>
+            <details>
+                <summary>Full user object</summary>
+                <pre id="full-user"></pre>
+            </details>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📘 How it works</h3>
+        <p>This page uses the <code>thenux-otp.js</code> SDK from your THENUX installation.<br>
+        The SDK automatically handles:</p>
+        <ul>
+            <li>Displaying a login modal (Google or email/password)</li>
+            <li>Exchanging Firebase credentials for a THENUX JWT</li>
+            <li>Showing OTP input if the user has 2FA enabled</li>
+            <li>Returning the final token and user data via the <code>onSuccess</code> callback</li>
+        </ul>
+        <p>After login, you can use the returned JWT to authenticate requests to your own backend.</p>
+    </div>
+
+    <!-- Load the THENUX SDK -->
+    <script src="https://thenux-auth.netlify.app/sdk/thenux-otp.js"></script>
+
+    <script>
+        // ⚠️ REPLACE THIS WITH YOUR REAL API KEY (from your dashboard)
+        const YOUR_API_KEY = 'tnxe_your_api_key_here';
+
+        ThenuxAuth.init({
+            apiKey: YOUR_API_KEY,
+            host: 'https://thenux-auth.netlify.app', // or your custom domain
+            onSuccess: (token, user) => {
+                console.log('Login success!', { token, user });
+                document.getElementById('auth-result').style.display = 'block';
+                document.getElementById('user-email').textContent = user.email;
+                document.getElementById('token-preview').textContent = token.slice(0, 80) + '...';
+                document.getElementById('full-user').textContent = JSON.stringify(user, null, 2);
+            },
+            onError: (error) => {
+                console.error('Auth error:', error);
+                alert('Authentication failed: ' + (error.message || error));
+            }
+        });
+    </script>
+
+    <div class="card">
+        <h3>🔧 Manual API integration (alternative)</h3>
+        <p>If you prefer to build your own UI, you can directly call the REST endpoints:</p>
+        <pre><code>// 1. Start OTP session
+fetch('https://thenux-auth.netlify.app/.netlify/functions/send-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-thenux-key': 'YOUR_API_KEY' },
+    body: JSON.stringify({ email: 'user@example.com' })
+})
+.then(r => r.json())
+.then(data => {
+    const otpSessionToken = data.otpSessionToken;
+    // 2. Verify code (user input)
+    return fetch('https://thenux-auth.netlify.app/.netlify/functions/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-thenux-key': 'YOUR_API_KEY' },
+        body: JSON.stringify({ code: '123456', otpSessionToken })
+    });
+})
+.then(r => r.json())
+.then(verifyData => {
+    console.log('JWT token:', verifyData.tokens.accessToken);
+});</code></pre>
+    </div>
+</body>
+</html>
