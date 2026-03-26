@@ -1,146 +1,118 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THENUX OTP Login</title>
+    <title>THENUX OTP Test</title>
     <style>
-        body {
-            font-family: system-ui;
-            max-width: 400px;
-            margin: 2rem auto;
-            padding: 1rem;
-            background: #f5f7fc;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        input, button {
-            width: 100%;
-            padding: 0.75rem;
-            margin: 0.5rem 0;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background: #00e5ff;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .message {
-            padding: 0.5rem;
-            border-radius: 8px;
-            margin: 0.5rem 0;
-            display: none;
-        }
-        .error { background: #fee; color: #c00; display: block; }
-        .success { background: #efe; color: #060; display: block; }
-        .info { background: #eef; color: #006; display: block; }
+        body { font-family: sans-serif; max-width: 500px; margin: 2rem auto; padding: 1rem; }
+        input, button { width: 100%; padding: 0.5rem; margin: 0.5rem 0; }
+        button { background: #00e5ff; font-weight: bold; cursor: pointer; }
+        .hidden { display: none; }
+        .msg { padding: 0.5rem; border-radius: 4px; margin: 1rem 0; }
+        .error { background: #fee; color: #c00; }
+        .success { background: #efe; color: #060; }
     </style>
 </head>
 <body>
-<div class="card">
-    <h2>🔐 THENUX OTP Login</h2>
-    <p>Enter your email, then the 6‑digit code from your authenticator app.</p>
-
+    <h2>THENUX OTP Login</h2>
     <div id="step1">
-        <input type="email" id="email" placeholder="Email">
+        <input type="email" id="email" placeholder="Your email">
         <button id="sendBtn">Send OTP</button>
     </div>
-
-    <div id="step2" style="display:none;">
-        <input type="text" id="otp" placeholder="6‑digit code" maxlength="6">
-        <button id="verifyBtn">Verify Code</button>
+    <div id="step2" class="hidden">
+        <input type="text" id="code" placeholder="6-digit code" maxlength="6">
+        <button id="verifyBtn">Verify</button>
     </div>
+    <div id="msg" class="msg hidden"></div>
 
-    <div id="message" class="message"></div>
-</div>
+    <script>
+        const API_KEY = 'tnxe_3a18b2eef0a3fb3c8d2b334a75a46776dc3ed73c475ba3ba362ee024'; // Replace with your real key
+        const BASE = 'https://thenux-auth.netlify.app';
+        let sessionToken = null;
 
-<script>
-    const API_KEY = 'tnxe_3a18b2eef0a3fb3c8d2b334a75a46776dc3ed73c475ba3ba362ee024'; // Replace with your actual key
-    const BASE = 'https://thenux-auth.netlify.app';
-    let sessionToken = null;
+        const sendBtn = document.getElementById('sendBtn');
+        const emailInput = document.getElementById('email');
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const codeInput = document.getElementById('code');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const msgDiv = document.getElementById('msg');
 
-    const sendBtn = document.getElementById('sendBtn');
-    const verifyBtn = document.getElementById('verifyBtn');
-    const emailInput = document.getElementById('email');
-    const otpInput = document.getElementById('otp');
-    const step1Div = document.getElementById('step1');
-    const step2Div = document.getElementById('step2');
-    const msgDiv = document.getElementById('message');
-
-    function showMessage(text, type) {
-        msgDiv.textContent = text;
-        msgDiv.className = `message ${type}`;
-        setTimeout(() => { msgDiv.className = 'message'; }, 5000);
-    }
-
-    sendBtn.onclick = async () => {
-        const email = emailInput.value.trim();
-        if (!email) return showMessage('Email required', 'error');
-
-        sendBtn.disabled = true;
-        sendBtn.textContent = 'Sending...';
-
-        try {
-            const res = await fetch(`${BASE}/.netlify/functions/send-otp`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-thenux-key': API_KEY
-                },
-                body: JSON.stringify({ email })
-            });
-            const data = await res.json();
-            if (!res.ok || !data.success) throw new Error(data.error || 'Request failed');
-
-            sessionToken = data.otpSessionToken;
-            showMessage('✓ OTP sent. Enter the 6‑digit code from your authenticator app.', 'success');
-            step1Div.style.display = 'none';
-            step2Div.style.display = 'block';
-            otpInput.focus();
-        } catch (err) {
-            showMessage(err.message, 'error');
-        } finally {
-            sendBtn.disabled = false;
-            sendBtn.textContent = 'Send OTP';
+        function showMessage(text, type) {
+            msgDiv.textContent = text;
+            msgDiv.className = `msg ${type}`;
+            setTimeout(() => { msgDiv.classList.add('hidden'); }, 5000);
         }
-    };
 
-    verifyBtn.onclick = async () => {
-        const code = otpInput.value.trim();
-        if (!code || !/^\d{6}$/.test(code)) return showMessage('Enter a 6‑digit code', 'error');
+        sendBtn.onclick = async () => {
+            const email = emailInput.value.trim();
+            if (!email) return showMessage('Email required', 'error');
 
-        verifyBtn.disabled = true;
-        verifyBtn.textContent = 'Verifying...';
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            try {
+                const res = await fetch(`${BASE}/.netlify/functions/send-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-thenux-key': API_KEY
+                    },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.error || 'Request failed');
 
-        try {
-            const res = await fetch(`${BASE}/.netlify/functions/verify-otp`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-thenux-key': API_KEY
-                },
-                body: JSON.stringify({ code, otpSessionToken: sessionToken })
-            });
-            const data = await res.json();
-            if (!res.ok || !data.success) throw new Error(data.error || 'Invalid code');
+                sessionToken = data.otpSessionToken;
+                sessionStorage.setItem('otpSession', sessionToken);
+                // Redirect to the authenticator page with the session token
+                window.location.href = `${BASE}/authenticator?session=${sessionToken}&email=${encodeURIComponent(email)}`;
+            } catch (err) {
+                showMessage(err.message, 'error');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send OTP';
+            }
+        };
 
-            showMessage(`✅ Welcome ${data.user.email}! JWT received.`, 'success');
-            console.log('JWT:', data.tokens.accessToken);
-            console.log('User:', data.user);
-            // Redirect or store token as needed
-        } catch (err) {
-            showMessage(err.message, 'error');
-        } finally {
-            verifyBtn.disabled = false;
-            verifyBtn.textContent = 'Verify Code';
+        // When coming back, we'll have the session token stored
+        const stored = sessionStorage.getItem('otpSession');
+        if (stored) {
+            sessionToken = stored;
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            codeInput.focus();
         }
-    };
-</script>
+
+        verifyBtn.onclick = async () => {
+            const code = codeInput.value.trim();
+            if (!code || !/^\d{6}$/.test(code)) return showMessage('Enter 6-digit code', 'error');
+
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verifying...';
+            try {
+                const res = await fetch(`${BASE}/.netlify/functions/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-thenux-key': API_KEY
+                    },
+                    body: JSON.stringify({ code, otpSessionToken: sessionToken })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.error || 'Invalid code');
+
+                showMessage(`✅ Welcome ${data.user.email}! JWT received.`, 'success');
+                console.log('JWT:', data.tokens.accessToken);
+                console.log('User:', data.user);
+                sessionStorage.removeItem('otpSession');
+                step2.classList.add('hidden');
+                step1.classList.remove('hidden');
+                codeInput.value = '';
+            } catch (err) {
+                showMessage(err.message, 'error');
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify';
+            }
+        };
+    </script>
 </body>
 </html>
