@@ -3,153 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THENUX Auth Test - External Website</title>
+    <title>THENUX OTP Gateway Demo</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 700px;
-            margin: 2rem auto;
-            padding: 1rem;
-            line-height: 1.5;
-            background: #f5f7fc;
-            color: #1a1a2e;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
         .card {
+            max-width: 450px;
+            width: 100%;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             padding: 2rem;
-            margin: 1rem 0;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #1a1a2e;
+        }
+        p {
+            color: #4b5563;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            color: #2d3748;
+        }
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00e5ff;
+            box-shadow: 0 0 0 3px rgba(0,229,255,0.2);
         }
         button {
+            width: 100%;
             background: #00e5ff;
             color: #000;
             border: none;
-            padding: 12px 24px;
+            padding: 0.75rem;
             font-size: 1rem;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s;
+            margin-top: 0.5rem;
         }
         button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0,229,255,0.3);
         }
-        pre {
-            background: #f0f0f0;
-            padding: 1rem;
-            border-radius: 8px;
-            overflow-x: auto;
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
-        .user-info {
-            background: #e8f5e9;
-            border-left: 4px solid #22d3a5;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-        .warning {
-            background: #fff3e0;
-            border-left: 4px solid #f59e0b;
-            padding: 0.8rem;
+        .message {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 12px;
             font-size: 0.9rem;
+            display: none;
         }
-        code {
-            background: #f0f0f0;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            font-family: monospace;
+        .error {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-left: 4px solid #ef4444;
+            display: block;
+        }
+        .success {
+            background: #e6f9ed;
+            color: #166534;
+            border-left: 4px solid #22c55e;
+            display: block;
+        }
+        .info {
+            background: #e0f2fe;
+            color: #0c4a6e;
+            border-left: 4px solid #0ea5e9;
+            display: block;
+        }
+        .otp-section {
+            display: none;
+            margin-top: 1rem;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         hr {
-            margin: 2rem 0;
+            margin: 1.5rem 0;
+            border: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-top: 1.5rem;
+        }
+        code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🔐 THENUX Auth Test</h1>
-        <p>This is a sample external website using the THENUX authentication gateway.<br>
-        Click the button below to sign in with your THENUX account (Google or email).</p>
+<div class="card">
+    <h1>🔐 THENUX OTP Gateway</h1>
+    <p>This page demonstrates how any external website can use your THENUX service for OTP authentication.</p>
 
-        <div class="warning">
-            ⚠️ <strong>Important:</strong> Replace the API key in the script below with a real key from your 
-            <a href="https://thenux-auth.netlify.app/dashboard/" target="_blank">THENUX Dashboard</a>.
-            If you don't have one, create an API key first in your dashboard.
+    <!-- Step 1: Email input -->
+    <div id="step1">
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="email" placeholder="user@example.com" autocomplete="email">
         </div>
-
-        <button id="thenux-login" style="margin: 1rem 0 0 0;">🚀 Sign in with THENUX</button>
-
-        <div id="auth-result" style="display: none;" class="user-info">
-            <h3>✅ Authentication successful!</h3>
-            <p><strong>User:</strong> <span id="user-email"></span></p>
-            <p><strong>JWT Token (first 80 chars):</strong> <code id="token-preview"></code></p>
-            <details>
-                <summary>Full user object</summary>
-                <pre id="full-user"></pre>
-            </details>
-        </div>
+        <button id="sendOtpBtn">Send OTP</button>
     </div>
 
-    <div class="card">
-        <h3>📘 How it works</h3>
-        <p>This page uses the <code>thenux-otp.js</code> SDK from your THENUX installation.<br>
-        The SDK automatically handles:</p>
-        <ul>
-            <li>Displaying a login modal (Google or email/password)</li>
-            <li>Exchanging Firebase credentials for a THENUX JWT</li>
-            <li>Showing OTP input if the user has 2FA enabled</li>
-            <li>Returning the final token and user data via the <code>onSuccess</code> callback</li>
-        </ul>
-        <p>After login, you can use the returned JWT to authenticate requests to your own backend.</p>
+    <!-- Step 2: OTP input (shown after sending) -->
+    <div id="step2" class="otp-section">
+        <div class="form-group">
+            <label>6‑digit OTP Code</label>
+            <input type="text" id="otpCode" placeholder="000000" maxlength="6" inputmode="numeric">
+        </div>
+        <button id="verifyOtpBtn">Verify Code</button>
     </div>
 
-    <!-- Load the THENUX SDK -->
-    <script src="https://thenux-auth.netlify.app/sdk/thenux-otp.js"></script>
+    <!-- Status messages -->
+    <div id="message" class="message"></div>
 
-    <script>
-        // ⚠️ REPLACE THIS WITH YOUR REAL API KEY (from your dashboard)
-        const YOUR_API_KEY = 'tnxe_3a18b2eef0a3fb3c8d2b334a75a46776dc3ed73c475ba3ba362ee024';
+    <hr>
 
-        ThenuxAuth.init({
-            apiKey: YOUR_API_KEY,
-            host: 'https://thenux-auth.netlify.app', // or your custom domain
-            onSuccess: (token, user) => {
-                console.log('Login success!', { token, user });
-                document.getElementById('auth-result').style.display = 'block';
-                document.getElementById('user-email').textContent = user.email;
-                document.getElementById('token-preview').textContent = token.slice(0, 80) + '...';
-                document.getElementById('full-user').textContent = JSON.stringify(user, null, 2);
-            },
-            onError: (error) => {
-                console.error('Auth error:', error);
-                alert('Authentication failed: ' + (error.message || error));
+    <div class="footer">
+        Powered by <a href="https://thenux-auth.netlify.app" target="_blank">THENUX AUTH</a><br>
+        <span style="font-size:0.65rem">No Firebase SDK – directly uses your API gateway</span>
+    </div>
+</div>
+
+<script>
+    // ======================== CONFIGURATION ========================
+    // Replace with your actual THENUX API key (from your dashboard)
+    const THENUX_API_KEY = 'tnxe_3a18b2eef0a3fb3c8d2b334a75a46776dc3ed73c475ba3ba362ee024';
+
+    // Your THENUX base URL (if hosted elsewhere, change it)
+    const THENUX_BASE_URL = 'https://thenux-auth.netlify.app';
+
+    // Endpoints
+    const SEND_OTP_URL = `${THENUX_BASE_URL}/.netlify/functions/send-otp`;
+    const VERIFY_OTP_URL = `${THENUX_BASE_URL}/.netlify/functions/verify-otp`;
+    // =============================================================
+
+    // DOM elements
+    const emailInput = document.getElementById('email');
+    const sendBtn = document.getElementById('sendOtpBtn');
+    const step2Div = document.getElementById('step2');
+    const otpInput = document.getElementById('otpCode');
+    const verifyBtn = document.getElementById('verifyOtpBtn');
+    const messageDiv = document.getElementById('message');
+
+    // State
+    let otpSessionToken = null;
+
+    // Helper to show messages
+    function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+        setTimeout(() => {
+            if (messageDiv.className === `message ${type}`) {
+                messageDiv.style.display = 'none';
+                messageDiv.className = 'message';
             }
-        });
-    </script>
+        }, 5000);
+    }
 
-    <div class="card">
-        <h3>🔧 Manual API integration (alternative)</h3>
-        <p>If you prefer to build your own UI, you can directly call the REST endpoints:</p>
-        <pre><code>// 1. Start OTP session
-fetch('https://thenux-auth.netlify.app/.netlify/functions/send-otp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-thenux-key': 'YOUR_API_KEY' },
-    body: JSON.stringify({ email: 'user@example.com' })
-})
-.then(r => r.json())
-.then(data => {
-    const otpSessionToken = data.otpSessionToken;
-    // 2. Verify code (user input)
-    return fetch('https://thenux-auth.netlify.app/.netlify/functions/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-thenux-key': 'YOUR_API_KEY' },
-        body: JSON.stringify({ code: '123456', otpSessionToken })
+    // Helper to set loading state on buttons
+    function setLoading(btn, loading) {
+        btn.disabled = loading;
+        btn.textContent = loading ? (btn.id === 'sendOtpBtn' ? 'Sending...' : 'Verifying...') : (btn.id === 'sendOtpBtn' ? 'Send OTP' : 'Verify Code');
+    }
+
+    // Step 1: Request OTP
+    sendBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        if (!email) {
+            showMessage('Please enter an email address.', 'error');
+            return;
+        }
+
+        setLoading(sendBtn, true);
+        try {
+            const response = await fetch(SEND_OTP_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-thenux-key': THENUX_API_KEY
+                },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to send OTP');
+            }
+
+            // Store the session token
+            otpSessionToken = data.otpSessionToken;
+
+            // Show success and reveal OTP input
+            showMessage('✓ OTP sent! Please check your authenticator app for the 6‑digit code.', 'success');
+            step2Div.style.display = 'block';
+            otpInput.focus();
+        } catch (err) {
+            showMessage(err.message, 'error');
+        } finally {
+            setLoading(sendBtn, false);
+        }
     });
-})
-.then(r => r.json())
-.then(verifyData => {
-    console.log('JWT token:', verifyData.tokens.accessToken);
-});</code></pre>
-    </div>
+
+    // Step 2: Verify OTP
+    verifyBtn.addEventListener('click', async () => {
+        const code = otpInput.value.trim();
+        if (!code || !/^\d{6}$/.test(code)) {
+            showMessage('Please enter a valid 6‑digit code.', 'error');
+            return;
+        }
+
+        if (!otpSessionToken) {
+            showMessage('Session expired. Please request a new OTP.', 'error');
+            step2Div.style.display = 'none';
+            return;
+        }
+
+        setLoading(verifyBtn, true);
+        try {
+            const response = await fetch(VERIFY_OTP_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-thenux-key': THENUX_API_KEY
+                },
+                body: JSON.stringify({
+                    code: code,
+                    otpSessionToken: otpSessionToken
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Invalid code');
+            }
+
+            // Success! We have a JWT token and user info
+            const { tokens, user } = data;
+
+            // Display success and the token (demo only)
+            showMessage(`✅ Authentication successful! Welcome ${user.email}.`, 'success');
+            console.log('JWT Token:', tokens.accessToken);
+            console.log('User:', user);
+
+            // Optionally redirect or store token for further requests
+            // localStorage.setItem('thenux_token', tokens.accessToken);
+            // window.location.href = '/dashboard';
+
+            // Show a more detailed success in the message area
+            setTimeout(() => {
+                showMessage(`JWT received (valid for 1h). Check console for details.`, 'info');
+            }, 2000);
+
+            // Reset form
+            otpInput.value = '';
+            otpSessionToken = null;
+            step2Div.style.display = 'none';
+        } catch (err) {
+            showMessage(err.message, 'error');
+        } finally {
+            setLoading(verifyBtn, false);
+        }
+    });
+
+    // Reset on page load / clear state
+    window.addEventListener('load', () => {
+        emailInput.value = '';
+        otpInput.value = '';
+        step2Div.style.display = 'none';
+        messageDiv.style.display = 'none';
+        otpSessionToken = null;
+    });
+</script>
 </body>
 </html>
